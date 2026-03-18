@@ -1,0 +1,29 @@
+@import "tailwindcss";
+
+:root {
+  --background: #f8f7f5;
+  --foreground: #1a160f;
+  --primary: #f2a20d;
+}
+
+.dark {
+  --background: #1a160f;
+  --foreground: #f8f7f5;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: 'Space Grotesk', sans-serif;
+}
+
+/* Loading animation */
+@keyframes loading-bar {
+  0% { transform: translateX(-100%); }
+  50% { transform: translateX(233%); }
+  100% { transform: translateX(-100%); }
+}
+
+.animate-loading-bar {
+  animation: loading-bar 1.5s ease-in-out infinite;
+}

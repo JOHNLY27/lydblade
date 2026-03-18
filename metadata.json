@@ -1,0 +1,5 @@
+{
+  "name": "AI Stylist",
+  "description": "AI-powered haircut recommendation web application using Next.js and Supabase.",
+  "requestFramePermissions": []
+}
