@@ -90,6 +90,7 @@ CREATE TABLE bookings (
   service TEXT NOT NULL,
   booking_date DATE NOT NULL,
   booking_time TEXT NOT NULL,
+  barber_id TEXT,
   notes TEXT,
   status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'confirmed', 'completed', 'cancelled')),
   created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL

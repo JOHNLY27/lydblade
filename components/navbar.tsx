@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Scissors, Menu, X, User, LogOut, Shield } from 'lucide-react'
+import { Scissors, Menu, X, User, LogOut, Shield, CalendarCheck } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { getClientUser, isAdmin, type UserWithRole } from '@/lib/auth'
@@ -21,7 +21,21 @@ export default function Navbar() {
       setLoading(false)
     }
     checkUser()
-  }, [pathname])
+
+    // Listen for auth changes (sign in/out) instead of re-fetching on every navigation
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event) => {
+      if (event === 'SIGNED_IN') {
+        const currentUser = await getClientUser()
+        setUser(currentUser)
+      } else if (event === 'SIGNED_OUT') {
+        setUser(null)
+      }
+    })
+
+    return () => {
+      subscription.unsubscribe()
+    }
+  }, [])
 
   const handleLogout = async () => {
     await supabase.auth.signOut()
@@ -34,6 +48,8 @@ export default function Navbar() {
     { href: '/services', label: 'Services' },
     { href: '/booking', label: 'Book Now' },
     { href: '/dashboard', label: 'AI Suggest' },
+    { href: '/#location', label: 'Location' },
+    ...(user ? [{ href: '/my-bookings', label: 'My Bookings' }] : []),
     ...(user && isAdmin(user) ? [{ href: '/admin', label: 'Admin' }] : []),
   ]
 

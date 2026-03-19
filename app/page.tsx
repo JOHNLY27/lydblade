@@ -68,6 +68,158 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Meet Our Barbers Section */}
+      <section className="px-6 py-16 md:px-10 bg-slate-900/50">
+        <div className="max-w-7xl mx-auto">
+          <div className="border-l-4 border-primary pl-6 mb-10">
+            <h2 className="text-3xl font-bold tracking-tight">Meet Our Barbers</h2>
+            <p className="text-slate-500 mt-2">Skilled professionals dedicated to your perfect look.</p>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-6">
+            {[
+              { name: 'Miguel Santos', specialty: 'Fades & Undercuts', image: '/barbers/miguel.png' },
+              { name: 'James Cruz', specialty: 'Pompadour & Classic', image: '/barbers/james.png' },
+              { name: 'Carlo Reyes', specialty: 'Razor & Beard Design', image: '/barbers/carlo.png' },
+              { name: 'Marco Dela Cruz', specialty: 'Buzz & Skin Fades', image: '/barbers/marco.png' },
+              { name: 'Rafael Garcia', specialty: 'Textured & Modern', image: '/barbers/rafael.png' },
+            ].map((barber, i) => (
+              <div key={i} className="group text-center">
+                <div className="relative w-full aspect-square rounded-2xl overflow-hidden mb-4 border-2 border-slate-800 group-hover:border-primary/40 transition-all">
+                  <img src={barber.image} alt={barber.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                </div>
+                <h3 className="font-bold text-sm">{barber.name}</h3>
+                <p className="text-xs text-slate-500 mt-0.5">{barber.specialty}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Location Section */}
+      <section id="location" className="px-6 py-16 md:px-10">
+        <div className="max-w-7xl mx-auto">
+          <div className="border-l-4 border-primary pl-6 mb-10">
+            <h2 className="text-3xl font-bold tracking-tight">Find Us</h2>
+            <p className="text-slate-500 mt-2">Visit our barbershop and experience premium grooming.</p>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
+            {/* Map */}
+            <div className="lg:col-span-3 rounded-2xl overflow-hidden border border-slate-800 h-[400px] lg:h-auto">
+              <iframe
+                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d15795.0!2d125.5356!3d8.9475!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3301f9be1a2b5f3d%3A0x3a3c4c3b3c3c3c3c!2sBuhangin%2C%20Butuan%20City%2C%20Agusan%20del%20Norte!5e0!3m2!1sen!2sph!4v1710000000000"
+                width="100%"
+                height="100%"
+                style={{ border: 0, minHeight: '400px' }}
+                allowFullScreen
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+                title="Blade & AI Barbershop Location - Buhangin, Butuan City"
+              />
+            </div>
+
+            {/* Info Card */}
+            <div className="lg:col-span-2 space-y-6">
+              {/* Address */}
+              <div className="p-6 rounded-2xl border border-slate-800 bg-slate-900/50 space-y-4">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                    <svg className="w-5 h-5 text-primary" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z" />
+                    </svg>
+                  </div>
+                  <h3 className="font-bold text-lg">Our Location</h3>
+                </div>
+                <div>
+                  <p className="text-slate-300 font-medium">Blade & AI Grooming Lab</p>
+                  <p className="text-sm text-slate-500 mt-1">
+                    Buhangin, Butuan City
+                    <br />
+                    Agusan del Norte
+                    <br />
+                    Philippines
+                  </p>
+                </div>
+                <a
+                  href="https://www.google.com/maps/search/Buhangin+Butuan+City+Agusan+del+Norte"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary text-background font-bold text-sm hover:bg-primary/90 transition-all"
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 6.75V15m6-6v8.25m.503 3.498 4.875-2.437c.381-.19.622-.58.622-1.006V4.82c0-.836-.88-1.38-1.628-1.006l-3.869 1.934c-.317.159-.69.159-1.006 0L9.503 3.252a1.125 1.125 0 0 0-1.006 0L3.622 5.689C3.24 5.88 3 6.27 3 6.695V19.18c0 .836.88 1.38 1.628 1.006l3.869-1.934c.317-.159.69-.159 1.006 0l4.994 2.497c.317.158.69.158 1.006 0Z" />
+                  </svg>
+                  Get Directions
+                </a>
+              </div>
+
+              {/* Business Hours */}
+              <div className="p-6 rounded-2xl border border-slate-800 bg-slate-900/50">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                    <svg className="w-5 h-5 text-primary" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                    </svg>
+                  </div>
+                  <h3 className="font-bold text-lg">Business Hours</h3>
+                </div>
+                <div className="space-y-2.5">
+                  {[
+                    { day: 'Monday', hours: '9:00 AM – 8:00 PM' },
+                    { day: 'Tuesday', hours: '9:00 AM – 8:00 PM' },
+                    { day: 'Wednesday', hours: '9:00 AM – 8:00 PM' },
+                    { day: 'Thursday', hours: '9:00 AM – 8:00 PM' },
+                    { day: 'Friday', hours: '9:00 AM – 9:00 PM' },
+                    { day: 'Saturday', hours: '8:00 AM – 9:00 PM' },
+                    { day: 'Sunday', hours: '10:00 AM – 6:00 PM' },
+                  ].map((item) => {
+                    const today = new Date().toLocaleDateString('en-US', { weekday: 'long' })
+                    const isToday = item.day === today
+                    return (
+                      <div key={item.day} className={`flex items-center justify-between py-1.5 px-3 rounded-lg ${isToday ? 'bg-primary/10 border border-primary/20' : ''}`}>
+                        <span className={`text-sm ${isToday ? 'font-bold text-primary' : 'text-slate-400'}`}>
+                          {item.day}
+                          {isToday && <span className="ml-2 text-[10px] uppercase tracking-wider bg-primary/20 text-primary px-2 py-0.5 rounded-full">Today</span>}
+                        </span>
+                        <span className={`text-sm ${isToday ? 'font-bold text-primary' : 'text-slate-300'}`}>{item.hours}</span>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+
+              {/* Contact */}
+              <div className="p-6 rounded-2xl border border-slate-800 bg-slate-900/50">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                    <svg className="w-5 h-5 text-primary" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 0 0 2.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 0 1-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 0 0-1.091-.852H4.5A2.25 2.25 0 0 0 2.25 4.5v2.25Z" />
+                    </svg>
+                  </div>
+                  <h3 className="font-bold text-lg">Contact</h3>
+                </div>
+                <div className="space-y-3">
+                  <a href="tel:+639949479270" className="flex items-center gap-3 text-sm text-slate-400 hover:text-primary transition-colors">
+                    <span className="text-primary">📞</span>
+                    0994 947 9270
+                  </a>
+                  <a href="mailto:remitarjohnlydrick@gmail.com" className="flex items-center gap-3 text-sm text-slate-400 hover:text-primary transition-colors">
+                    <span className="text-primary">📧</span>
+                    remitarjohnlydrick@gmail.com
+                  </a>
+                  <a href="https://facebook.com" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 text-sm text-slate-400 hover:text-primary transition-colors">
+                    <span className="text-primary">📱</span>
+                    @BladeAndAI
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Footer */}
       <footer className="border-t border-primary/10 py-12 px-6 md:px-10 bg-background mt-auto">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-8">

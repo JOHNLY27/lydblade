@@ -100,11 +100,14 @@ export default function Dashboard() {
     const { data, error } = await supabase
       .from('uploads')
       .select(`
-        *,
-        recommendations (*)
+        id,
+        face_shape,
+        created_at,
+        recommendations (id, hairstyle_name, match_percentage)
       `)
       .eq('user_id', userId)
       .order('created_at', { ascending: false })
+      .limit(10)
     
     if (!error) setHistory(data)
   }
@@ -137,7 +140,7 @@ export default function Dashboard() {
         .from('uploads')
         .insert({
           user_id: user.id,
-          image_url: 'form-submission',
+          image_url: 'none',
           face_shape: formData.faceShape
         })
         .select()
@@ -512,17 +515,53 @@ export default function Dashboard() {
         {/* History Section */}
         {history.length > 0 && (
           <section className="mt-20">
-            <h2 className="text-2xl font-bold mb-8">Previous Uploads</h2>
-            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
-              {history.map((item) => (
-                <div key={item.id} className="group relative aspect-square rounded-xl overflow-hidden border border-slate-800 cursor-pointer">
-                  <img src={item.image_url} alt="History" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
-                  <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center p-2 text-center">
-                    <span className="text-xs font-bold text-primary uppercase">{item.face_shape}</span>
-                    <span className="text-[10px] text-slate-400">{new Date(item.created_at).toLocaleDateString()}</span>
+            <div className="flex items-center justify-between mb-8">
+              <h2 className="text-2xl font-bold">Recommendation History</h2>
+              <span className="text-sm text-slate-500">{history.length} past {history.length === 1 ? 'session' : 'sessions'}</span>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {history.map((item) => {
+                const faceData = faceShapes.find(s => s.id === item.face_shape)
+                return (
+                  <div key={item.id} className="group p-5 rounded-xl border border-slate-800 hover:border-primary/30 bg-background/50 transition-all hover:shadow-lg">
+                    {/* Header */}
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center text-2xl">
+                        {faceData?.icon || '🧑'}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-bold text-sm">{faceData?.name || item.face_shape} Face</h3>
+                        <p className="text-xs text-slate-500">
+                          {new Date(item.created_at).toLocaleDateString('en-US', {
+                            month: 'short',
+                            day: 'numeric',
+                            year: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Recommended Styles */}
+                    {item.recommendations && item.recommendations.length > 0 ? (
+                      <div className="space-y-2">
+                        <p className="text-[10px] font-bold uppercase tracking-widest text-slate-600 mb-2">Suggested Styles</p>
+                        {item.recommendations.map((rec: any, i: number) => (
+                          <div key={rec.id || i} className="flex items-center justify-between py-1.5 px-3 rounded-lg bg-slate-800/30">
+                            <span className="text-sm font-medium truncate">{rec.hairstyle_name}</span>
+                            <span className="text-[10px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full shrink-0 ml-2">
+                              {rec.match_percentage}%
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-xs text-slate-600 italic">No recommendations saved</p>
+                    )}
                   </div>
-                </div>
-              ))}
+                )
+              })}
             </div>
           </section>
         )}
