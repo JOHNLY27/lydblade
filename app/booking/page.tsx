@@ -8,8 +8,28 @@ import { Calendar, Clock, User, Scissors, CheckCircle, Loader2 } from 'lucide-re
 import Link from 'next/link'
 
 const services = [
+  // Haircuts
   { id: 'classic-fade', name: 'Classic Fade', price: '₱350', duration: '45 min' },
   { id: 'signature-undercut', name: 'Signature Undercut', price: '₱400', duration: '50 min' },
+  { id: 'pompadour', name: 'Classic Pompadour', price: '₱450', duration: '60 min' },
+  { id: 'textured-crop', name: 'Textured Crop', price: '₱380', duration: '45 min' },
+  { id: 'buzz-cut', name: 'Buzz Cut', price: '₱250', duration: '30 min' },
+  { id: 'side-part', name: 'Side Part', price: '₱350', duration: '45 min' },
+  { id: 'quiff', name: 'Modern Quiff', price: '₱420', duration: '55 min' },
+  { id: 'crew-cut', name: 'Crew Cut', price: '₱300', duration: '35 min' },
+  { id: 'french-crop', name: 'French Crop', price: '₱380', duration: '45 min' },
+  { id: 'slick-back', name: 'Slick Back', price: '₱400', duration: '50 min' },
+  { id: 'low-fade', name: 'Low Fade', price: '₱320', duration: '40 min' },
+  { id: 'low-taper', name: 'Low Taper', price: '₱320', duration: '40 min' },
+  { id: 'blowout', name: 'Blowout', price: '₱420', duration: '55 min' },
+  { id: 'mid-fade', name: 'Mid Fade', price: '₱350', duration: '45 min' },
+  { id: 'skin-fade', name: 'Skin Fade', price: '₱400', duration: '50 min' },
+  { id: 'caesar-cut', name: 'Caesar Cut', price: '₱300', duration: '35 min' },
+  { id: 'faux-hawk', name: 'Faux Hawk', price: '₱430', duration: '55 min' },
+  { id: 'taper-fade', name: 'Taper Fade', price: '₱350', duration: '45 min' },
+  { id: 'drop-fade', name: 'Drop Fade', price: '₱380', duration: '50 min' },
+  { id: 'burst-fade', name: 'Burst Fade', price: '₱400', duration: '50 min' },
+  // Grooming
   { id: 'beard-sculpting', name: 'Beard Sculpting', price: '₱250', duration: '30 min' },
   { id: 'hot-towel-shave', name: 'Hot Towel Shave', price: '₱300', duration: '40 min' },
   { id: 'full-grooming', name: 'Full Grooming Package', price: '₱700', duration: '90 min' },
