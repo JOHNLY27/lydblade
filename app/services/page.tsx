@@ -1,10 +1,12 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { ArrowLeft, Calendar } from 'lucide-react'
+import { ArrowLeft, Calendar, Loader2 } from 'lucide-react'
+import { createClient } from '@/lib/supabase/client'
 
-// Free hairstyle images from Pexels (pexels.com) - high quality, free to use
-const allServices = [
+// Default hairstyles (static catalog)
+const defaultServices = [
   {
     id: 'classic-fade',
     name: 'Classic Fade',
@@ -206,6 +208,48 @@ const allServices = [
 ]
 
 export default function ServicesPage() {
+  const [allServices, setAllServices] = useState(defaultServices)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    fetchDatabaseServices()
+  }, [])
+
+  const fetchDatabaseServices = async () => {
+    try {
+      const supabase = createClient()
+      const { data: dbServices } = await supabase
+        .from('services')
+        .select('*')
+        .order('created_at', { ascending: true })
+
+      if (dbServices && dbServices.length > 0) {
+        // Get names of default services (lowercase for comparison)
+        const defaultNames = new Set(defaultServices.map(s => s.name.toLowerCase()))
+
+        // Filter DB services that are NOT already in the default list
+        const newServices = dbServices
+          .filter(s => !defaultNames.has(s.name.toLowerCase()))
+          .map(s => ({
+            id: s.id,
+            name: s.name,
+            description: `Premium ${s.category || 'haircut'} service crafted by our expert barbers.`,
+            price: s.price || '₱350',
+            duration: s.duration || '45 min',
+            image: s.image_url || 'https://images.pexels.com/photos/1813272/pexels-photo-1813272.jpeg?auto=compress&cs=tinysrgb&w=400&h=400&dpr=1',
+            bestFor: s.category || 'All face shapes',
+          }))
+
+        // Merge: default services first, then new DB services
+        setAllServices([...defaultServices, ...newServices])
+      }
+    } catch (err) {
+      console.error('Error fetching services:', err)
+    } finally {
+      setLoading(false)
+    }
+  }
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -236,54 +280,60 @@ export default function ServicesPage() {
           </p>
         </div>
 
-        {/* Services Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {allServices.map((service) => (
-            <div 
-              key={service.id}
-              className="group bg-background/50 rounded-xl border border-primary/10 overflow-hidden hover:border-primary/30 transition-all hover:shadow-lg hover:shadow-primary/5"
-            >
-              {/* Image */}
-              <div className="aspect-square overflow-hidden relative bg-slate-900">
-                <img 
-                  src={service.image} 
-                  alt={service.name}
-                  loading="lazy"
-                  decoding="async"
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                  onError={(e) => { e.currentTarget.src = 'https://images.pexels.com/photos/1813272/pexels-photo-1813272.jpeg?auto=compress&cs=tinysrgb&w=400&h=400&dpr=1' }}
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                <div className="absolute bottom-0 left-0 right-0 p-4 translate-y-full group-hover:translate-y-0 transition-transform">
-                  <p className="text-white text-sm">
-                    <span className="text-primary font-bold">Best for:</span> {service.bestFor}
-                  </p>
+        {loading ? (
+          <div className="flex justify-center py-20">
+            <Loader2 className="w-10 h-10 animate-spin text-primary" />
+          </div>
+        ) : (
+          /* Services Grid */
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {allServices.map((service) => (
+              <div 
+                key={service.id}
+                className="group bg-background/50 rounded-xl border border-primary/10 overflow-hidden hover:border-primary/30 transition-all hover:shadow-lg hover:shadow-primary/5"
+              >
+                {/* Image */}
+                <div className="aspect-square overflow-hidden relative bg-slate-900">
+                  <img 
+                    src={service.image} 
+                    alt={service.name}
+                    loading="lazy"
+                    decoding="async"
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    onError={(e) => { e.currentTarget.src = 'https://images.pexels.com/photos/1813272/pexels-photo-1813272.jpeg?auto=compress&cs=tinysrgb&w=400&h=400&dpr=1' }}
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                  <div className="absolute bottom-0 left-0 right-0 p-4 translate-y-full group-hover:translate-y-0 transition-transform">
+                    <p className="text-white text-sm">
+                      <span className="text-primary font-bold">Best for:</span> {service.bestFor}
+                    </p>
+                  </div>
                 </div>
-              </div>
 
-              {/* Content */}
-              <div className="p-5">
-                <div className="flex items-start justify-between mb-2">
-                  <h3 className="text-lg font-bold">{service.name}</h3>
-                  <span className="text-primary font-bold">{service.price}</span>
-                </div>
-                <p className="text-slate-500 text-sm mb-3 line-clamp-2">
-                  {service.description}
-                </p>
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-slate-400">{service.duration}</span>
-                  <Link
-                    href={`/booking?service=${service.id}`}
-                    className="inline-flex items-center gap-1 px-3 py-1.5 bg-primary/10 text-primary rounded-lg text-sm font-medium hover:bg-primary hover:text-background transition-all"
-                  >
-                    <Calendar className="w-4 h-4" />
-                    Book
-                  </Link>
+                {/* Content */}
+                <div className="p-5">
+                  <div className="flex items-start justify-between mb-2">
+                    <h3 className="text-lg font-bold">{service.name}</h3>
+                    <span className="text-primary font-bold">{service.price}</span>
+                  </div>
+                  <p className="text-slate-500 text-sm mb-3 line-clamp-2">
+                    {service.description}
+                  </p>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-slate-400">{service.duration}</span>
+                    <Link
+                      href={`/booking?service=${service.id}`}
+                      className="inline-flex items-center gap-1 px-3 py-1.5 bg-primary/10 text-primary rounded-lg text-sm font-medium hover:bg-primary hover:text-background transition-all"
+                    >
+                      <Calendar className="w-4 h-4" />
+                      Book
+                    </Link>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
 
         {/* CTA */}
         <div className="mt-16 text-center">

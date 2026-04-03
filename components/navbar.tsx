@@ -3,43 +3,19 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { Scissors, Menu, X, User, LogOut, Shield, CalendarCheck } from 'lucide-react'
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { getClientUser, isAdmin, type UserWithRole } from '@/lib/auth'
+import { isAdmin } from '@/lib/auth'
+import { useAuth } from '@/lib/auth-context'
 
 export default function Navbar() {
   const pathname = usePathname()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
-  const [user, setUser] = useState<UserWithRole | null>(null)
-  const [loading, setLoading] = useState(true)
+  const { user, loading } = useAuth()
   const supabase = createClient()
-
-  useEffect(() => {
-    const checkUser = async () => {
-      const currentUser = await getClientUser()
-      setUser(currentUser)
-      setLoading(false)
-    }
-    checkUser()
-
-    // Listen for auth changes (sign in/out) instead of re-fetching on every navigation
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event) => {
-      if (event === 'SIGNED_IN') {
-        const currentUser = await getClientUser()
-        setUser(currentUser)
-      } else if (event === 'SIGNED_OUT') {
-        setUser(null)
-      }
-    })
-
-    return () => {
-      subscription.unsubscribe()
-    }
-  }, [])
 
   const handleLogout = async () => {
     await supabase.auth.signOut()
-    setUser(null)
     window.location.href = '/'
   }
 
@@ -62,7 +38,7 @@ export default function Navbar() {
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2 text-primary hover:opacity-90 transition-opacity">
             <Scissors className="w-7 h-7" />
-            <span className="text-xl font-bold tracking-tight">Blade & AI</span>
+            <span className="text-xl font-bold tracking-tight">Lydblade</span>
           </Link>
 
           {/* Desktop Nav */}

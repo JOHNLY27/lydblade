@@ -8,7 +8,7 @@ import {
   Shield, Users, LogOut, Loader2, Calendar, CheckCircle, XCircle, Clock, 
   Scissors, TrendingUp, Star, AlertCircle, Eye, BarChart3, 
   CalendarDays, UserCheck, Activity, RefreshCw, ChevronRight, Search,
-  Filter
+  Filter, Plus
 } from 'lucide-react'
 import Link from 'next/link'
 
@@ -215,7 +215,11 @@ export default function AdminDashboard() {
             </button>
           ))}
 
-          <div className="pt-4 mt-4 border-t border-primary/10">
+          <div className="pt-4 mt-4 border-t border-primary/10 space-y-1">
+            <Link href="/admin/management" className="w-full flex items-center gap-3 px-4 py-3 text-emerald-400 hover:bg-emerald-400/10 rounded-xl transition-all font-medium">
+              <Plus className="w-5 h-5" />
+              Manage Data (New)
+            </Link>
             <Link href="/dashboard" className="w-full flex items-center gap-3 px-4 py-3 text-slate-400 hover:bg-primary/10 hover:text-primary rounded-xl transition-all">
               <Eye className="w-5 h-5" />
               Customer View

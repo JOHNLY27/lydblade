@@ -1,10 +1,10 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { createClient } from '@/lib/supabase/client'
-import { getClientUser, type UserWithRole } from '@/lib/auth'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { useAuth } from '@/lib/auth-context'
+import { createClient } from '@/lib/supabase/client'
 import { 
   Calendar, 
   Clock, 
@@ -20,15 +20,7 @@ import {
   RefreshCw
 } from 'lucide-react'
 
-const barbersList = [
-  { id: 'miguel', name: 'Miguel Santos', image: '/barbers/miguel.png' },
-  { id: 'james', name: 'James Cruz', image: '/barbers/james.png' },
-  { id: 'carlo', name: 'Carlo Reyes', image: '/barbers/carlo.png' },
-  { id: 'marco', name: 'Marco Dela Cruz', image: '/barbers/marco.png' },
-  { id: 'rafael', name: 'Rafael Garcia', image: '/barbers/rafael.png' },
-]
 
-const getBarberById = (id: string) => barbersList.find(b => b.id === id)
 
 type Booking = {
   id: string
@@ -99,31 +91,35 @@ const filterOptions = [
 ]
 
 export default function MyBookings() {
-  const [user, setUser] = useState<UserWithRole | null>(null)
-  const [loading, setLoading] = useState(true)
+  const { user: authUser, loading: authLoading } = useAuth()
   const [bookings, setBookings] = useState<Booking[]>([])
+  const [barbers, setBarbers] = useState<any[]>([])
   const [filter, setFilter] = useState('all')
   const [refreshing, setRefreshing] = useState(false)
+  const [dataLoading, setDataLoading] = useState(true)
   const router = useRouter()
   const supabase = createClient()
 
+  const getBarberById = (id: string) => barbers.find(b => b.id === id)
+
   useEffect(() => {
-    const getUser = async () => {
-      const currentUser = await getClientUser()
-      if (!currentUser) {
-        router.push('/login')
-        return
-      }
-      setUser(currentUser)
-      await fetchBookings(currentUser.id)
-      setLoading(false)
+    if (authLoading) return
+    if (!authUser) {
+      router.push('/login')
+      return
     }
-    getUser()
-  }, [])
+    const init = async () => {
+      const { data: bData } = await supabase.from('barbers').select('*')
+      if (bData) setBarbers(bData)
+      await fetchBookings(authUser.id)
+      setDataLoading(false)
+    }
+    init()
+  }, [authUser, authLoading])
 
   // Set up real-time subscription for booking status changes
   useEffect(() => {
-    if (!user) return
+    if (!authUser) return
 
     const channel = supabase
       .channel('booking-status-changes')
@@ -133,9 +129,9 @@ export default function MyBookings() {
           event: 'UPDATE',
           schema: 'public',
           table: 'bookings',
-          filter: `user_id=eq.${user.id}`,
+          filter: `user_id=eq.${authUser.id}`,
         },
-        (payload) => {
+        (payload: any) => {
           // Update the booking in state when it changes
           setBookings((prev) =>
             prev.map((b) =>
@@ -149,7 +145,7 @@ export default function MyBookings() {
     return () => {
       supabase.removeChannel(channel)
     }
-  }, [user])
+  }, [authUser])
 
   const fetchBookings = async (userId: string) => {
     const { data, error } = await supabase
@@ -164,9 +160,9 @@ export default function MyBookings() {
   }
 
   const handleRefresh = async () => {
-    if (!user) return
+    if (!authUser) return
     setRefreshing(true)
-    await fetchBookings(user.id)
+    await fetchBookings(authUser.id)
     setTimeout(() => setRefreshing(false), 500)
   }
 
@@ -199,7 +195,22 @@ export default function MyBookings() {
       .join(' ')
   }
 
-  if (loading) {
+  const handleCancelBooking = async (bookingId: string) => {
+    if (!confirm('Are you sure you want to cancel this booking?')) return;
+    const { error } = await supabase
+      .from('bookings')
+      .update({ status: 'cancelled' })
+      .eq('id', bookingId);
+      
+    if (!error) {
+      setBookings(prev => prev.map(b => b.id === bookingId ? { ...b, status: 'cancelled' } as Booking : b));
+      alert('Booking cancelled successfully.');
+    } else {
+      alert('Failed to cancel booking.');
+    }
+  };
+
+  if (authLoading || dataLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <Loader2 className="w-12 h-12 animate-spin text-primary" />
@@ -407,6 +418,18 @@ export default function MyBookings() {
                         </div>
                       )}
                     </div>
+
+                    {/* Action for pending bookings */}
+                    {booking.status === 'pending' && (
+                      <div className="mt-4 pt-4 border-t border-yellow-400/10 flex justify-end">
+                        <button
+                          onClick={() => handleCancelBooking(booking.id)}
+                          className="px-4 py-2 text-sm text-red-500 font-medium hover:bg-red-500/10 rounded-lg transition-all"
+                        >
+                          Cancel Booking
+                        </button>
+                      </div>
+                    )}
 
                     {/* Action for confirmed bookings */}
                     {booking.status === 'confirmed' && (

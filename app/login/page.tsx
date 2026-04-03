@@ -45,12 +45,23 @@ export default function Login() {
       return
     }
 
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password })
     if (error) {
       setError(error.message)
       setLoading(false)
     } else {
-      router.push('/dashboard')
+      // Check user role to decide where to redirect
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', data.user.id)
+        .single()
+
+      if (profile?.role === 'admin') {
+        router.push('/admin')
+      } else {
+        router.push('/dashboard')
+      }
     }
   }
 
@@ -254,42 +265,7 @@ export default function Login() {
                 )}
               </div>
 
-              {/* Role Selection */}
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-slate-400">Account Type</label>
-                <div className="grid grid-cols-2 gap-3">
-                  <button
-                    type="button"
-                    onClick={() => setRole('customer')}
-                    className={`flex items-center gap-3 p-3 rounded-xl border transition-all ${
-                      role === 'customer'
-                        ? 'border-primary bg-primary/10'
-                        : 'border-slate-800 hover:border-slate-600'
-                    }`}
-                  >
-                    <User className={`w-5 h-5 ${role === 'customer' ? 'text-primary' : 'text-slate-500'}`} />
-                    <div className="text-left">
-                      <p className="text-sm font-bold">Customer</p>
-                      <p className="text-[10px] text-slate-500">Book appointments</p>
-                    </div>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setRole('admin')}
-                    className={`flex items-center gap-3 p-3 rounded-xl border transition-all ${
-                      role === 'admin'
-                        ? 'border-primary bg-primary/10'
-                        : 'border-slate-800 hover:border-slate-600'
-                    }`}
-                  >
-                    <ShieldCheck className={`w-5 h-5 ${role === 'admin' ? 'text-primary' : 'text-slate-500'}`} />
-                    <div className="text-left">
-                      <p className="text-sm font-bold">Admin</p>
-                      <p className="text-[10px] text-slate-500">Manage shop</p>
-                    </div>
-                  </button>
-                </div>
-              </div>
+
             </>
           )}
 

@@ -1,5 +1,6 @@
 import Link from 'next/link'
-import { Scissors, Sparkles, Calendar, ArrowRight } from 'lucide-react'
+import { Scissors, Sparkles, Calendar, ArrowRight, Star, HelpCircle, Shield, Clock } from 'lucide-react'
+import BarbersList from '@/components/barbers-list'
 
 export default function Home() {
   return (
@@ -15,18 +16,20 @@ export default function Home() {
                   Premium Barbershop
                 </span>
                 <h1 className="text-4xl md:text-6xl font-bold leading-tight tracking-tight text-white">
-                  Master Your Look at <span className="text-primary">Blade & AI</span>
+                  Master Your Look at <span className="text-primary">Lydblade</span>
                 </h1>
                 <p className="text-lg md:text-xl text-slate-300 font-light max-w-2xl mx-auto">
                   Where classic barbershop tradition meets modern style. Expert cuts, precision grooming, and AI-powered recommendations for the perfect you.
                 </p>
               </div>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
-                <Link href="/booking" className="flex items-center justify-center gap-2 rounded-lg h-14 px-8 bg-primary text-background text-base font-bold hover:bg-primary/90 transition-all shadow-lg shadow-primary/20 group">
-                  <Calendar className="w-5 h-5" />
+              <div className="flex flex-col sm:flex-row gap-5 justify-center pt-6">
+                <Link href="/booking" className="relative flex items-center justify-center gap-3 rounded-2xl h-16 sm:h-18 px-12 bg-primary text-background text-lg sm:text-xl font-bold hover:bg-primary/90 hover:scale-105 transition-all duration-300 shadow-2xl shadow-primary/30 group">
+                  <span className="absolute inset-0 rounded-2xl bg-primary/50 animate-ping opacity-20"></span>
+                  <Calendar className="w-6 h-6" />
                   Book Now
+                  <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                 </Link>
-                <Link href="/dashboard" className="flex items-center justify-center gap-2 rounded-lg h-14 px-8 bg-white/10 text-white border border-white/20 backdrop-blur-sm text-base font-bold hover:bg-white/20 transition-all">
+                <Link href="/dashboard" className="flex items-center justify-center gap-3 rounded-2xl h-16 sm:h-18 px-10 bg-white/10 text-white border border-white/20 backdrop-blur-sm text-base font-bold hover:bg-white/20 hover:scale-105 transition-all duration-300">
                   <Sparkles className="w-5 h-5" />
                   AI Style Finder
                 </Link>
@@ -75,24 +78,91 @@ export default function Home() {
             <h2 className="text-3xl font-bold tracking-tight">Meet Our Barbers</h2>
             <p className="text-slate-500 mt-2">Skilled professionals dedicated to your perfect look.</p>
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-6">
+          <BarbersList />
+        </div>
+      </section>
+
+      {/* Why Choose Us */}
+      <section className="px-6 py-16 md:px-10 max-w-7xl mx-auto border-t border-primary/10">
+        <div className="text-center mb-12">
+          <h2 className="text-3xl font-bold tracking-tight">Why Choose Lydblade?</h2>
+          <p className="text-slate-500 mt-2">More than just a haircut, it's an experience.</p>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="p-6 rounded-2xl bg-slate-900/50 border border-slate-800 text-center space-y-4">
+            <div className="w-12 h-12 mx-auto bg-primary/10 text-primary rounded-xl flex items-center justify-center">
+              <Sparkles className="w-6 h-6" />
+            </div>
+            <h3 className="font-bold text-lg">AI-Powered Styling</h3>
+            <p className="text-sm text-slate-400">Not sure what fits? Our AI analyzes your face shape and hair type to recommend your best look.</p>
+          </div>
+          <div className="p-6 rounded-2xl bg-slate-900/50 border border-slate-800 text-center space-y-4">
+            <div className="w-12 h-12 mx-auto bg-primary/10 text-primary rounded-xl flex items-center justify-center">
+              <Shield className="w-6 h-6" />
+            </div>
+            <h3 className="font-bold text-lg">Premium Quality</h3>
+            <p className="text-sm text-slate-400">We use only top-tier grooming products and precise techniques for an unmatched finish.</p>
+          </div>
+          <div className="p-6 rounded-2xl bg-slate-900/50 border border-slate-800 text-center space-y-4">
+            <div className="w-12 h-12 mx-auto bg-primary/10 text-primary rounded-xl flex items-center justify-center">
+              <Clock className="w-6 h-6" />
+            </div>
+            <h3 className="font-bold text-lg">Seamless Booking</h3>
+            <p className="text-sm text-slate-400">Book, manage, and track your appointments easily with our modern platform.</p>
+          </div>
+        </div>
+      </section>
+
+      {/* Testimonials */}
+      <section className="px-6 py-16 md:px-10 bg-slate-900/50">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold tracking-tight">What Our Clients Say</h2>
+            <p className="text-slate-500 mt-2">Join hundreds of satisfied gentlemen.</p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {[
-              { name: 'Miguel Santos', specialty: 'Fades & Undercuts', image: '/barbers/miguel.png' },
-              { name: 'James Cruz', specialty: 'Pompadour & Classic', image: '/barbers/james.png' },
-              { name: 'Carlo Reyes', specialty: 'Razor & Beard Design', image: '/barbers/carlo.png' },
-              { name: 'Marco Dela Cruz', specialty: 'Buzz & Skin Fades', image: '/barbers/marco.png' },
-              { name: 'Rafael Garcia', specialty: 'Textured & Modern', image: '/barbers/rafael.png' },
-            ].map((barber, i) => (
-              <div key={i} className="group text-center">
-                <div className="relative w-full aspect-square rounded-2xl overflow-hidden mb-4 border-2 border-slate-800 group-hover:border-primary/40 transition-all">
-                  <img src={barber.image} alt={barber.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+              { name: 'Mark D.', text: 'Best fade I have ever gotten. The AI suggested a style I never thought of, and it looks incredible.', rate: 5 },
+              { name: 'Steve R.', text: 'Super professional. The atmosphere is top-notch and booking online is a breeze. Highly recommend.', rate: 5 },
+              { name: 'Jason T.', text: 'Great service. Took his time and delivered exactly what I asked for. Will definitely be coming back.', rate: 5 },
+            ].map((review, i) => (
+              <div key={i} className="p-6 bg-background rounded-2xl border border-slate-800">
+                <div className="flex gap-1 text-primary mb-3">
+                  {[...Array(review.rate)].map((_, idx) => <Star key={idx} className="w-4 h-4 fill-primary" />)}
                 </div>
-                <h3 className="font-bold text-sm">{barber.name}</h3>
-                <p className="text-xs text-slate-500 mt-0.5">{barber.specialty}</p>
+                <p className="text-sm text-slate-300 italic mb-4">"{review.text}"</p>
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 bg-slate-800 rounded-full flex items-center justify-center font-bold text-xs text-slate-400">
+                    {review.name.charAt(0)}
+                  </div>
+                  <span className="text-sm font-medium text-slate-400">{review.name}</span>
+                </div>
               </div>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* FAQ */}
+      <section className="px-6 py-16 md:px-10 max-w-4xl mx-auto">
+        <div className="text-center mb-12">
+          <h2 className="text-3xl font-bold tracking-tight">Frequently Asked Questions</h2>
+        </div>
+        <div className="space-y-4">
+          {[
+            { q: 'Do you accept walk-ins?', a: 'While we do accept walk-ins, we highly recommend booking an appointment online to guarantee your slot and avoid long wait times.' },
+            { q: 'How does the AI Style Finder work?', a: 'Just upload a photo or answer a few quick questions about your face shape and hair type. Our AI analyzes this to suggest the most flattering haircuts for you.' },
+            { q: 'What happens if I need to cancel?', a: 'You can cancel your pending bookings directly from your "My Bookings" page. For confirmed slots, please contact us if you need to reschedule.' },
+            { q: 'Do you offer kids haircuts?', a: 'Yes, we provide styling for all ages. However, our atmosphere is tailored towards a premium adult grooming experience.' },
+          ].map((faq, i) => (
+            <div key={i} className="p-6 rounded-2xl bg-slate-900/30 border border-slate-800">
+              <h3 className="font-bold flex items-center gap-2 mb-2">
+                <HelpCircle className="w-5 h-5 text-primary" />
+                {faq.q}
+              </h3>
+              <p className="text-sm text-slate-400 pl-7">{faq.a}</p>
+            </div>
+          ))}
         </div>
       </section>
 
@@ -115,7 +185,7 @@ export default function Home() {
                 allowFullScreen
                 loading="lazy"
                 referrerPolicy="no-referrer-when-downgrade"
-                title="Blade & AI Barbershop Location - Buhangin, Butuan City"
+                title="Lydblade Barbershop Location - Buhangin, Butuan City"
               />
             </div>
 
@@ -133,7 +203,7 @@ export default function Home() {
                   <h3 className="font-bold text-lg">Our Location</h3>
                 </div>
                 <div>
-                  <p className="text-slate-300 font-medium">Blade & AI Grooming Lab</p>
+                  <p className="text-slate-300 font-medium">Lydblade Grooming Lab</p>
                   <p className="text-sm text-slate-500 mt-1">
                     Buhangin, Butuan City
                     <br />
@@ -211,7 +281,7 @@ export default function Home() {
                   </a>
                   <a href="https://facebook.com" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 text-sm text-slate-400 hover:text-primary transition-colors">
                     <span className="text-primary">📱</span>
-                    @BladeAndAI
+                    @Lydblade
                   </a>
                 </div>
               </div>
@@ -225,7 +295,7 @@ export default function Home() {
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-8">
           <div className="flex items-center gap-2 text-primary">
             <Scissors className="w-8 h-8" />
-            <h2 className="text-2xl font-bold tracking-tight">Blade & AI</h2>
+            <h2 className="text-2xl font-bold tracking-tight">Lydblade</h2>
           </div>
           <div className="flex gap-8 text-sm font-medium text-slate-500">
             <Link href="#" className="hover:text-primary transition-colors">Privacy Policy</Link>
@@ -233,7 +303,7 @@ export default function Home() {
             <Link href="#" className="hover:text-primary transition-colors">Contact Us</Link>
           </div>
           <p className="text-center text-slate-500 text-xs">
-            © 2024 Blade & AI Grooming Lab. All rights reserved.
+            © {new Date().getFullYear()} Lydblade Grooming Lab. All rights reserved.
           </p>
         </div>
       </footer>

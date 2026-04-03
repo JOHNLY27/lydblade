@@ -1,0 +1,135 @@
+import { NextResponse } from 'next/server';
+
+// Simple in-memory rate limiting: 5 requests per hour per IP
+const rateLimitMap = new Map<string, [number, number]>();
+const RATE_LIMIT = 5;
+const WINDOW_MS = 60 * 60 * 1000;
+
+export async function POST(req: Request) {
+  try {
+    // Basic IP-based Rate Limiting
+    const ip = req.headers.get('x-forwarded-for') || 'unknown';
+    const now = Date.now();
+    const limitData = rateLimitMap.get(ip);
+
+    if (limitData) {
+      const [count, windowStart] = limitData;
+      if (now - windowStart > WINDOW_MS) {
+        rateLimitMap.set(ip, [1, now]); // Reset
+      } else if (count >= RATE_LIMIT) {
+        return NextResponse.json({ error: 'Rate limit exceeded. Please try again in an hour.' }, { status: 429 });
+      } else {
+        rateLimitMap.set(ip, [count + 1, windowStart]);
+      }
+    } else {
+      rateLimitMap.set(ip, [1, now]);
+    }
+
+    const { imageBase64 } = await req.json();
+
+    const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+    
+    if (!GEMINI_API_KEY) {
+      console.error('Missing GEMINI API key');
+      return NextResponse.json({ error: 'Missing Gemini API key in configuration.' }, { status: 500 });
+    }
+
+    if (!imageBase64) {
+      return NextResponse.json({ error: 'No image provided' }, { status: 400 });
+    }
+
+    console.log('Sending image to Gemini AI... (base64 length:', imageBase64.length, ')');
+
+    const prompt = `You are an expert barber and hairstylist. Analyze this person's photo carefully. Look at their face shape, forehead size, jawline, cheekbones, hair type, and overall features.
+
+Based on your analysis, recommend exactly 4 haircut styles that would look BEST on this person.
+
+For each recommendation, respond in this EXACT JSON format (no markdown, no code fences, just raw JSON):
+{
+  "faceShape": "detected face shape",
+  "analysis": "A brief 1-2 sentence analysis of their features",
+  "recommendations": [
+    {
+      "name": "Haircut Name",
+      "description": "Why this haircut suits their face and features (2-3 sentences)",
+      "matchPercentage": 95
+    }
+  ]
+}
+
+Rules:
+- matchPercentage should range from 75 to 98
+- First recommendation should be the best match
+- Be specific about WHY each style suits their features
+- Use real popular haircut names (Textured Crop, Low Fade, Pompadour, Side Part, etc.)
+- Return ONLY valid JSON, no other text`;
+
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [
+            {
+              parts: [
+                { text: prompt },
+                {
+                  inlineData: {
+                    mimeType: 'image/jpeg',
+                    data: imageBase64,
+                  },
+                },
+              ],
+            },
+          ],
+          generationConfig: {
+            temperature: 0.7,
+            maxOutputTokens: 1024,
+          },
+        }),
+      }
+    );
+
+    const responseText = await response.text();
+    console.log('Gemini response status:', response.status);
+    
+    if (!response.ok) {
+      console.error('Gemini API error response:', responseText);
+      return NextResponse.json({ error: `Gemini API error (${response.status}): ${responseText.substring(0, 200)}` }, { status: 500 });
+    }
+
+    let data;
+    try {
+      data = JSON.parse(responseText);
+    } catch {
+      console.error('Failed to parse Gemini response:', responseText.substring(0, 500));
+      return NextResponse.json({ error: 'Invalid response from AI' }, { status: 500 });
+    }
+
+    const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+
+    if (!text) {
+      console.error('No text in Gemini response:', JSON.stringify(data).substring(0, 500));
+      return NextResponse.json({ error: 'No text response from AI. The image may have been blocked by safety filters.' }, { status: 500 });
+    }
+
+    console.log('Gemini raw text:', text.substring(0, 300));
+
+    // Clean the response - remove markdown code fences if present
+    const cleanedText = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+    
+    let parsed;
+    try {
+      parsed = JSON.parse(cleanedText);
+    } catch {
+      console.error('Failed to parse AI output as JSON:', cleanedText.substring(0, 500));
+      return NextResponse.json({ error: 'AI returned invalid format. Please try again.' }, { status: 500 });
+    }
+
+    return NextResponse.json({ success: true, data: parsed });
+  } catch (error: any) {
+    console.error('AI Photo Suggestion error:', error);
+    return NextResponse.json({ error: error.message || 'Failed to analyze photo' }, { status: 500 });
+  }
+}

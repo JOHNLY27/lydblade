@@ -11,14 +11,10 @@ export interface UserWithRole {
 // Client-side: Get current user with role
 export async function getClientUser(): Promise<UserWithRole | null> {
   const supabase = createClient()
+  const { data: { user } } = await supabase.auth.getUser()
   
-  // getSession() uses cached session (no network call), much faster than getUser()
-  const { data: { session } } = await supabase.auth.getSession()
-  
-  if (!session?.user) return null
+  if (!user) return null
 
-  const user = session.user
-  
   // Try to get role from user metadata first (set during signup, no extra query needed)
   const metadataRole = user.user_metadata?.role
   if (metadataRole && (metadataRole === 'admin' || metadataRole === 'customer')) {

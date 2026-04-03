@@ -47,6 +47,15 @@ type RouteHandlerConfig<Route extends AppRouteHandlerRoutes = AppRouteHandlerRou
 }
 
 
+// Validate ../../app/admin/management/page.tsx
+{
+  type __IsExpected<Specific extends AppPageConfig<"/admin/management">> = Specific
+  const handler = {} as typeof import("../../app/admin/management/page.js")
+  type __Check = __IsExpected<typeof handler>
+  // @ts-ignore
+  type __Unused = __Check
+}
+
 // Validate ../../app/admin/page.tsx
 {
   type __IsExpected<Specific extends AppPageConfig<"/admin">> = Specific
@@ -105,6 +114,33 @@ type RouteHandlerConfig<Route extends AppRouteHandlerRoutes = AppRouteHandlerRou
 {
   type __IsExpected<Specific extends AppPageConfig<"/services">> = Specific
   const handler = {} as typeof import("../../app/services/page.js")
+  type __Check = __IsExpected<typeof handler>
+  // @ts-ignore
+  type __Unused = __Check
+}
+
+// Validate ../../app/api/ai-photo-suggestion/route.ts
+{
+  type __IsExpected<Specific extends RouteHandlerConfig<"/api/ai-photo-suggestion">> = Specific
+  const handler = {} as typeof import("../../app/api/ai-photo-suggestion/route.js")
+  type __Check = __IsExpected<typeof handler>
+  // @ts-ignore
+  type __Unused = __Check
+}
+
+// Validate ../../app/api/send-email/route.ts
+{
+  type __IsExpected<Specific extends RouteHandlerConfig<"/api/send-email">> = Specific
+  const handler = {} as typeof import("../../app/api/send-email/route.js")
+  type __Check = __IsExpected<typeof handler>
+  // @ts-ignore
+  type __Unused = __Check
+}
+
+// Validate ../../app/api/upload-barber-image/route.ts
+{
+  type __IsExpected<Specific extends RouteHandlerConfig<"/api/upload-barber-image">> = Specific
+  const handler = {} as typeof import("../../app/api/upload-barber-image/route.js")
   type __Check = __IsExpected<typeof handler>
   // @ts-ignore
   type __Unused = __Check

@@ -7,78 +7,6 @@ import { useRouter } from 'next/navigation'
 import { Calendar, Clock, User, Scissors, CheckCircle, Loader2, CalendarCheck, Star, AlertCircle } from 'lucide-react'
 import Link from 'next/link'
 
-const barbers = [
-  {
-    id: 'miguel',
-    name: 'Miguel Santos',
-    image: '/barbers/miguel.png',
-    specialty: 'Fades & Undercuts',
-    experience: '8 years',
-    rating: 4.9,
-  },
-  {
-    id: 'james',
-    name: 'James Cruz',
-    image: '/barbers/james.png',
-    specialty: 'Pompadour & Classic Styles',
-    experience: '10 years',
-    rating: 4.8,
-  },
-  {
-    id: 'carlo',
-    name: 'Carlo Reyes',
-    image: '/barbers/carlo.png',
-    specialty: 'Razor Fades & Beard Design',
-    experience: '6 years',
-    rating: 4.9,
-  },
-  {
-    id: 'marco',
-    name: 'Marco Dela Cruz',
-    image: '/barbers/marco.png',
-    specialty: 'Buzz Cuts & Skin Fades',
-    experience: '12 years',
-    rating: 5.0,
-  },
-  {
-    id: 'rafael',
-    name: 'Rafael Garcia',
-    image: '/barbers/rafael.png',
-    specialty: 'Textured Crops & Modern Styles',
-    experience: '5 years',
-    rating: 4.7,
-  },
-]
-
-const services = [
-  // Haircuts
-  { id: 'classic-fade', name: 'Classic Fade', price: '₱350', duration: '45 min' },
-  { id: 'signature-undercut', name: 'Signature Undercut', price: '₱400', duration: '50 min' },
-  { id: 'pompadour', name: 'Classic Pompadour', price: '₱450', duration: '60 min' },
-  { id: 'textured-crop', name: 'Textured Crop', price: '₱380', duration: '45 min' },
-  { id: 'buzz-cut', name: 'Buzz Cut', price: '₱250', duration: '30 min' },
-  { id: 'side-part', name: 'Side Part', price: '₱350', duration: '45 min' },
-  { id: 'quiff', name: 'Modern Quiff', price: '₱420', duration: '55 min' },
-  { id: 'crew-cut', name: 'Crew Cut', price: '₱300', duration: '35 min' },
-  { id: 'french-crop', name: 'French Crop', price: '₱380', duration: '45 min' },
-  { id: 'slick-back', name: 'Slick Back', price: '₱400', duration: '50 min' },
-  { id: 'low-fade', name: 'Low Fade', price: '₱320', duration: '40 min' },
-  { id: 'low-taper', name: 'Low Taper', price: '₱320', duration: '40 min' },
-  { id: 'blowout', name: 'Blowout', price: '₱420', duration: '55 min' },
-  { id: 'mid-fade', name: 'Mid Fade', price: '₱350', duration: '45 min' },
-  { id: 'skin-fade', name: 'Skin Fade', price: '₱400', duration: '50 min' },
-  { id: 'caesar-cut', name: 'Caesar Cut', price: '₱300', duration: '35 min' },
-  { id: 'faux-hawk', name: 'Faux Hawk', price: '₱430', duration: '55 min' },
-  { id: 'taper-fade', name: 'Taper Fade', price: '₱350', duration: '45 min' },
-  { id: 'drop-fade', name: 'Drop Fade', price: '₱380', duration: '50 min' },
-  { id: 'burst-fade', name: 'Burst Fade', price: '₱400', duration: '50 min' },
-  // Grooming
-  { id: 'beard-sculpting', name: 'Beard Sculpting', price: '₱250', duration: '30 min' },
-  { id: 'hot-towel-shave', name: 'Hot Towel Shave', price: '₱300', duration: '40 min' },
-  { id: 'full-grooming', name: 'Full Grooming Package', price: '₱700', duration: '90 min' },
-  { id: 'hair-color', name: 'Hair Color & Styling', price: '₱800', duration: '120 min' },
-]
-
 const timeSlots = [
   '9:00 AM', '10:00 AM', '11:00 AM', '1:00 PM', 
   '2:00 PM', '3:00 PM', '4:00 PM', '5:00 PM'
@@ -91,9 +19,12 @@ export default function Booking() {
   const [submitted, setSubmitted] = useState(false)
   const [bookedSlots, setBookedSlots] = useState<{ barber_id: string; booking_time: string }[]>([])
   const [checkingAvailability, setCheckingAvailability] = useState(false)
+  const [barbers, setBarbers] = useState<any[]>([])
+  const [services, setServices] = useState<any[]>([])
   
   const [formData, setFormData] = useState({
     name: '',
+    email: '',
     phone: '',
     service: '',
     date: '',
@@ -106,15 +37,23 @@ export default function Booking() {
   const supabase = createClient()
 
   useEffect(() => {
-    const getUser = async () => {
-      const currentUser = await getClientUser()
-      if (currentUser) {
-        setUser(currentUser)
-        setFormData(prev => ({ ...prev, name: currentUser.email.split('@')[0] }))
+    const initData = async () => {
+      const [userRes, barbersRes, servicesRes] = await Promise.all([
+        getClientUser(),
+        supabase.from('barbers').select('*').order('created_at', { ascending: true }),
+        supabase.from('services').select('*').order('created_at', { ascending: true })
+      ])
+      
+      if (userRes) {
+        setUser(userRes)
+        setFormData(prev => ({ ...prev, name: userRes.email.split('@')[0], email: userRes.email }))
       }
+      if (barbersRes.data) setBarbers(barbersRes.data)
+      if (servicesRes.data) setServices(servicesRes.data)
+      
       setLoading(false)
     }
-    getUser()
+    initData()
   }, [])
 
   // Fetch booked slots when date changes to check barber availability
@@ -191,10 +130,37 @@ export default function Booking() {
         })
 
       if (error) throw error
+
+      // Send email confirmation using our new API route
+      const selectedService = services.find(s => s.id === formData.service)?.name;
+      const selectedBarberObj = barbers.find(b => b.id === formData.barber)?.name;
+      
+      try {
+        await fetch('/api/send-email', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: formData.name,
+            email: formData.email,
+            date: formData.date,
+            time: formData.time,
+            service: selectedService || formData.service,
+            barberName: selectedBarberObj || formData.barber
+          })
+        });
+      } catch (emailError) {
+        console.error("Failed to send email confirmation", emailError);
+      }
+
       setSubmitted(true)
-    } catch (error) {
+    } catch (error: any) {
       console.error('Booking error:', error)
-      alert('Failed to submit booking. Please try again.')
+      if (error?.code === '23505') {
+        alert('Someone else just booked this time slot! Please choose another time.');
+        await fetchBookedSlots(formData.date);
+      } else {
+        alert('Failed to submit booking. Please try again.')
+      }
     } finally {
       setSubmitting(false)
     }
@@ -312,6 +278,17 @@ export default function Booking() {
                       placeholder="+63 912 345 6789"
                     />
                   </div>
+                  <div className="sm:col-span-2">
+                    <label className="block text-sm font-medium text-slate-400 mb-2">Email Address *</label>
+                    <input
+                      type="email"
+                      required
+                      value={formData.email}
+                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                      className="w-full px-4 py-3 rounded-lg bg-white/5 border border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary transition-all outline-none"
+                      placeholder="you@example.com"
+                    />
+                  </div>
                 </div>
               </div>
 
@@ -327,17 +304,29 @@ export default function Booking() {
                       key={service.id}
                       type="button"
                       onClick={() => setFormData({ ...formData, service: service.id })}
-                      className={`p-4 rounded-lg border text-left transition-all ${
+                      className={`p-4 rounded-lg border text-left transition-all flex items-center gap-4 ${
                         formData.service === service.id
                           ? 'border-primary bg-primary/10'
                           : 'border-slate-800 hover:border-primary/50'
                       }`}
                     >
-                      <div className="flex justify-between items-start mb-1">
-                        <span className="font-bold">{service.name}</span>
-                        <span className="text-primary font-bold">{service.price}</span>
+                      {service.image_url && (
+                        <div className="shrink-0">
+                          <img 
+                            src={service.image_url} 
+                            alt={service.name} 
+                            className="w-12 h-12 rounded-lg object-cover border border-slate-700" 
+                            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
+                          />
+                        </div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex justify-between items-start mb-1">
+                          <span className="font-bold truncate mr-2">{service.name}</span>
+                          <span className="text-primary font-bold shrink-0">{service.price}</span>
+                        </div>
+                        <span className="text-xs text-slate-500">{service.duration}</span>
                       </div>
-                      <span className="text-xs text-slate-500">{service.duration}</span>
                     </button>
                   ))}
                 </div>
@@ -578,7 +567,7 @@ export default function Booking() {
               <ul className="space-y-3 text-sm text-slate-400">
                 <li className="flex items-start gap-2">
                   <CheckCircle className="w-4 h-4 text-primary mt-0.5 shrink-0" />
-                  5 expert barbers to choose from
+                  {barbers.length} expert barber{barbers.length !== 1 ? 's' : ''} to choose from
                 </li>
                 <li className="flex items-start gap-2">
                   <CheckCircle className="w-4 h-4 text-primary mt-0.5 shrink-0" />

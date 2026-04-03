@@ -11,7 +11,11 @@ import {
   Bookmark,
   ChevronRight,
   ChevronLeft,
-  RefreshCw
+  RefreshCw,
+  Camera,
+  Upload,
+  Zap,
+  Lock
 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
@@ -56,6 +60,14 @@ export default function Dashboard() {
   const [step, setStep] = useState(1)
   const [results, setResults] = useState<any>(null)
   const [history, setHistory] = useState<any[]>([])
+
+  // AI Photo states
+  const [photoFile, setPhotoFile] = useState<File | null>(null)
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null)
+  const [photoAnalyzing, setPhotoAnalyzing] = useState(false)
+  const [photoResults, setPhotoResults] = useState<any>(null)
+  const [canUsePhotoAI, setCanUsePhotoAI] = useState(true)
+  const [lastPhotoDate, setLastPhotoDate] = useState<string | null>(null)
   
   // Form data
   const [formData, setFormData] = useState({
@@ -90,6 +102,7 @@ export default function Dashboard() {
         
         setUser(currentUser)
         fetchHistory(currentUser.id)
+        checkDailyPhotoLimit(currentUser.id)
       }
       setLoading(false)
     }
@@ -247,6 +260,99 @@ export default function Dashboard() {
       hairLength: '',
       lifestyle: '',
     })
+  }
+
+  // ──── AI PHOTO SUGGESTION HANDLERS ────
+  const checkDailyPhotoLimit = async (userId: string) => {
+    const today = new Date().toISOString().split('T')[0]
+    const { data } = await supabase
+      .from('uploads')
+      .select('created_at')
+      .eq('user_id', userId)
+      .gte('created_at', `${today}T00:00:00.000Z`)
+      .not('image_url', 'eq', 'none') // only count photo-based uploads
+      .limit(1)
+    
+    if (data && data.length > 0) {
+      setCanUsePhotoAI(false)
+      setLastPhotoDate(today)
+    } else {
+      setCanUsePhotoAI(true)
+    }
+  }
+
+  const handlePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setPhotoFile(file)
+    const reader = new FileReader()
+    reader.onloadend = () => {
+      setPhotoPreview(reader.result as string)
+    }
+    reader.readAsDataURL(file)
+    setPhotoResults(null)
+  }
+
+  const handlePhotoAnalyze = async () => {
+    if (!photoFile || !user || !canUsePhotoAI) return
+    setPhotoAnalyzing(true)
+
+    try {
+      // Convert file to base64
+      const reader = new FileReader()
+      const base64Promise = new Promise<string>((resolve) => {
+        reader.onloadend = () => {
+          const base64 = (reader.result as string).split(',')[1]
+          resolve(base64)
+        }
+        reader.readAsDataURL(photoFile)
+      })
+      const imageBase64 = await base64Promise
+
+      const response = await fetch('/api/ai-photo-suggestion', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ imageBase64 }),
+      })
+
+      const result = await response.json()
+      if (!response.ok || !result.success) throw new Error(result.error || 'AI analysis failed')
+
+      setPhotoResults(result.data)
+
+      // Save to database so the daily limit is tracked
+      const { data: dbUpload, error: dbError } = await supabase
+        .from('uploads')
+        .insert({
+          user_id: user.id,
+          image_url: 'ai-photo-upload',
+          face_shape: result.data.faceShape || 'AI Detected',
+        })
+        .select()
+        .single()
+
+      if (!dbError && dbUpload && result.data.recommendations) {
+        const recsToSave = result.data.recommendations.map((rec: any) => ({
+          upload_id: dbUpload.id,
+          hairstyle_name: rec.name,
+          description: rec.description,
+          match_percentage: rec.matchPercentage,
+          preview_url: '',
+        }))
+        await supabase.from('recommendations').insert(recsToSave)
+        fetchHistory(user.id)
+      }
+
+      // Mark today as used
+      setCanUsePhotoAI(false)
+      setLastPhotoDate(new Date().toISOString().split('T')[0])
+
+    } catch (error: any) {
+      console.error('Photo AI Error:', error)
+      alert(`Error: ${error?.message || 'Failed to analyze photo'}`)
+    } finally {
+      setPhotoAnalyzing(false)
+    }
   }
 
   if (loading) {
@@ -565,7 +671,139 @@ export default function Dashboard() {
             </div>
           </section>
         )}
-      </div>
+
+        {/* ═══════════════ AI PHOTO SUGGESTION SECTION ═══════════════ */}
+        <section className="mt-20 pt-12 border-t border-slate-800">
+          <div className="text-center mb-10">
+            <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-400/10 text-emerald-400 text-xs font-bold uppercase tracking-widest border border-emerald-400/20 mb-4">
+              <Camera className="w-3.5 h-3.5" />
+              AI Photo Analysis
+            </span>
+            <h2 className="text-3xl font-bold">Upload Your Photo</h2>
+            <p className="text-slate-500 mt-2 max-w-lg mx-auto">
+              Let our AI analyze your face and suggest the perfect haircut tailored specifically to your features. <strong className="text-emerald-400">1 free scan per day.</strong>
+            </p>
+          </div>
+
+          <div className="max-w-3xl mx-auto">
+            {!canUsePhotoAI && !photoResults ? (
+              <div className="p-8 rounded-2xl border border-slate-800 bg-slate-900/50 text-center">
+                <Lock className="w-12 h-12 text-slate-600 mx-auto mb-4" />
+                <h3 className="text-xl font-bold text-slate-400 mb-2">Daily Limit Reached</h3>
+                <p className="text-sm text-slate-500">You've already used your free AI photo scan today. Come back tomorrow for another one!</p>
+              </div>
+            ) : !photoResults ? (
+              <div className="p-8 rounded-2xl border border-dashed border-slate-700 bg-slate-900/30 text-center space-y-6">
+                {photoPreview ? (
+                  <div className="relative inline-block">
+                    <img
+                      src={photoPreview}
+                      alt="Your photo"
+                      className="w-48 h-48 rounded-2xl object-cover border-2 border-primary/30 mx-auto shadow-xl"
+                    />
+                    <button
+                      onClick={() => { setPhotoFile(null); setPhotoPreview(null) }}
+                      className="absolute -top-2 -right-2 w-7 h-7 bg-red-500 rounded-full text-white text-xs font-bold flex items-center justify-center hover:bg-red-600 transition-colors"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                ) : (
+                  <div>
+                    <div className="w-20 h-20 rounded-2xl bg-emerald-400/10 flex items-center justify-center mx-auto mb-4">
+                      <Camera className="w-10 h-10 text-emerald-400" />
+                    </div>
+                    <p className="text-slate-400 font-medium">Upload a clear front-facing photo of yourself</p>
+                    <p className="text-xs text-slate-600 mt-1">For best results, use good lighting and face the camera directly</p>
+                  </div>
+                )}
+
+                <div className="flex flex-col sm:flex-row gap-3 justify-center items-center">
+                  {!photoPreview && (
+                    <label className="cursor-pointer flex items-center gap-2 px-6 py-3 rounded-xl bg-emerald-400/10 text-emerald-400 font-bold border border-emerald-400/20 hover:bg-emerald-400/20 transition-all">
+                      <Upload className="w-5 h-5" />
+                      Choose Photo
+                      <input
+                        type="file"
+                        accept="image/*"
+                        capture="user"
+                        className="hidden"
+                        onChange={handlePhotoSelect}
+                      />
+                    </label>
+                  )}
+                  {photoPreview && (
+                    <button
+                      onClick={handlePhotoAnalyze}
+                      disabled={photoAnalyzing}
+                      className="flex items-center gap-2 px-8 py-3 rounded-xl bg-emerald-400 text-background font-bold hover:bg-emerald-500 transition-all disabled:opacity-50 shadow-lg shadow-emerald-400/20"
+                    >
+                      {photoAnalyzing ? (
+                        <><Loader2 className="w-5 h-5 animate-spin" /> Analyzing Your Face...</>
+                      ) : (
+                        <><Zap className="w-5 h-5" /> Analyze My Photo</>
+                      )}
+                    </button>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-6">
+                {/* AI Analysis Result Header */}
+                <div className="p-6 rounded-2xl bg-gradient-to-r from-emerald-400/10 to-primary/10 border border-emerald-400/20">
+                  <div className="flex items-start gap-4">
+                    {photoPreview && (
+                      <img src={photoPreview} alt="You" className="w-16 h-16 rounded-xl object-cover border border-emerald-400/30" />
+                    )}
+                    <div>
+                      <div className="flex items-center gap-2 mb-1">
+                        <Zap className="w-4 h-4 text-emerald-400" />
+                        <span className="text-xs font-bold uppercase tracking-wider text-emerald-400">AI Analysis Complete</span>
+                      </div>
+                      <p className="font-bold text-lg">Detected Face Shape: <span className="text-emerald-400">{photoResults.faceShape}</span></p>
+                      {photoResults.analysis && (
+                        <p className="text-sm text-slate-400 mt-1">{photoResults.analysis}</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* AI Photo Recommendations */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  {photoResults.recommendations?.map((rec: any, i: number) => (
+                    <div key={i} className="p-5 rounded-xl border border-slate-800 bg-background/50 hover:border-emerald-400/30 transition-all">
+                      <div className="flex justify-between items-start mb-3">
+                        <div className="flex items-center gap-2">
+                          <span className="w-7 h-7 rounded-lg bg-emerald-400/10 flex items-center justify-center text-xs font-bold text-emerald-400">
+                            {i + 1}
+                          </span>
+                          <h3 className="font-bold text-lg">{rec.name}</h3>
+                        </div>
+                        <span className="bg-emerald-400/20 text-emerald-400 text-[10px] font-bold px-2 py-0.5 rounded-full">
+                          {rec.matchPercentage}% Match
+                        </span>
+                      </div>
+                      <p className="text-sm text-slate-400 mb-4 leading-relaxed">{rec.description}</p>
+                      <Link
+                        href={`/booking?service=${rec.name.toLowerCase().replace(/\s+/g, '-')}`}
+                        className="block w-full py-2.5 rounded-lg bg-emerald-400/10 text-emerald-400 font-bold text-sm text-center hover:bg-emerald-400/20 transition-all border border-emerald-400/20"
+                      >
+                        Book This Style
+                      </Link>
+                    </div>
+                  ))}
+                </div>
+
+                <button
+                  onClick={() => { setPhotoResults(null); setPhotoFile(null); setPhotoPreview(null) }}
+                  className="w-full py-3 rounded-xl border border-slate-800 text-slate-400 font-bold hover:bg-slate-800/50 transition-all text-sm"
+                >
+                  Done
+                </button>
+              </div>
+            )}
+          </div>
+        </section>      </div>
     </div>
   )
 }
