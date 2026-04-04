@@ -31,6 +31,7 @@ export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState<'overview' | 'bookings' | 'barbers'>('overview')
   const [bookingFilter, setBookingFilter] = useState('all')
   const [searchQuery, setSearchQuery] = useState('')
+  const [barberSearchQuery, setBarberSearchQuery] = useState('')
   const supabase = createClient()
   const router = useRouter()
 
@@ -131,19 +132,28 @@ export default function AdminDashboard() {
 
   // Barber performance
   const barberPerformance = useMemo(() => {
-    return barbersList.map(barber => {
-      const barberBookings = bookings.filter(b => String(b.barber_id) === String(barber.id))
-      const completedCount = barberBookings.filter(b => b.status === 'completed').length
-      const todayCount = barberBookings.filter(b => b.booking_date === today).length
-      const totalCount = barberBookings.length
-      return {
-        ...barber,
-        totalBookings: totalCount,
-        completedBookings: completedCount,
-        todayBookings: todayCount,
-      }
-    }).sort((a, b) => b.totalBookings - a.totalBookings)
-  }, [bookings, today, barbersList])
+    return barbersList
+      .filter(b => barberSearchQuery === '' || b.name.toLowerCase().includes(barberSearchQuery.toLowerCase()))
+      .map(barber => {
+        const barberBookings = bookings.filter(b => String(b.barber_id) === String(barber.id))
+        const completedCount = barberBookings.filter(b => b.status === 'completed').length
+        const todayCount = barberBookings.filter(b => b.booking_date === today).length
+        const totalCount = barberBookings.length
+        
+        // Find last activity
+        const lastBooking = barberBookings.length > 0 
+          ? barberBookings.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0].created_at 
+          : null
+
+        return {
+          ...barber,
+          totalBookings: totalCount,
+          completedBookings: completedCount,
+          todayBookings: todayCount,
+          lastBooking
+        }
+      }).sort((a, b) => b.totalBookings - a.totalBookings)
+  }, [bookings, today, barbersList, barberSearchQuery])
 
   // Filtered bookings
   const filteredBookings = useMemo(() => {
@@ -736,9 +746,31 @@ export default function AdminDashboard() {
         {/* ═══════════════════════ BARBERS TAB ═══════════════════════ */}
         {activeTab === 'barbers' && (
           <>
-            <div className="mb-8">
-              <h1 className="text-3xl font-bold">Barbers</h1>
-              <p className="text-slate-500 mt-1">View barber performance and schedule</p>
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+              <div>
+                <h1 className="text-3xl font-bold">Barbers</h1>
+                <p className="text-slate-500 mt-1">View barber performance and schedule</p>
+              </div>
+              
+              <div className="flex items-center gap-3">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                  <input
+                    type="text"
+                    placeholder="Search barbers..."
+                    value={barberSearchQuery}
+                    onChange={(e) => setBarberSearchQuery(e.target.value)}
+                    className="pl-10 pr-4 py-2 rounded-xl bg-slate-800/30 border border-slate-800 text-sm focus:border-primary transition-all outline-none"
+                  />
+                </div>
+                <Link 
+                  href="/admin/management" 
+                  className="px-4 py-2 bg-primary/10 text-primary hover:bg-primary hover:text-background rounded-xl text-sm font-bold transition-all flex items-center gap-2"
+                >
+                  <Plus className="w-4 h-4" />
+                  Add New
+                </Link>
+              </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -759,6 +791,12 @@ export default function AdminDashboard() {
                         <div>
                           <h3 className="text-lg font-bold">{barber.name}</h3>
                           <p className="text-xs text-slate-500">{barber.specialty}</p>
+                          {barber.lastBooking && (
+                            <p className="text-[10px] text-slate-600 mt-1 flex items-center gap-1">
+                              <Clock className="w-3 h-3" />
+                              Active {new Date(barber.lastBooking).toLocaleDateString()}
+                            </p>
+                          )}
                         </div>
                       </div>
                     </div>
