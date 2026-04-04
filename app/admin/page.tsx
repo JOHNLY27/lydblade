@@ -12,15 +12,6 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 
-const barbersList = [
-  { id: 'miguel', name: 'Miguel Santos', image: '/barbers/miguel.png', specialty: 'Fades & Undercuts' },
-  { id: 'james', name: 'James Cruz', image: '/barbers/james.png', specialty: 'Pompadour & Classic Styles' },
-  { id: 'carlo', name: 'Carlo Reyes', image: '/barbers/carlo.png', specialty: 'Razor Fades & Beard Design' },
-  { id: 'marco', name: 'Marco Dela Cruz', image: '/barbers/marco.png', specialty: 'Buzz Cuts & Skin Fades' },
-  { id: 'rafael', name: 'Rafael Garcia', image: '/barbers/rafael.png', specialty: 'Textured Crops & Modern Styles' },
-]
-
-const getBarberById = (id: string) => barbersList.find(b => b.id === id)
 
 const formatServiceName = (serviceId: string) => {
   return serviceId
@@ -36,11 +27,14 @@ export default function AdminDashboard() {
   const [stats, setStats] = useState({ users: 0, uploads: 0, recommendations: 0, bookings: 0 })
   const [recentUsers, setRecentUsers] = useState<any[]>([])
   const [bookings, setBookings] = useState<any[]>([])
+  const [barbersList, setBarbersList] = useState<any[]>([])
   const [activeTab, setActiveTab] = useState<'overview' | 'bookings' | 'barbers'>('overview')
   const [bookingFilter, setBookingFilter] = useState('all')
   const [searchQuery, setSearchQuery] = useState('')
   const supabase = createClient()
   const router = useRouter()
+
+  const getBarberById = (id: string | number) => barbersList.find(b => String(b.id) === String(id))
 
   useEffect(() => {
     checkAdmin()
@@ -66,6 +60,7 @@ export default function AdminDashboard() {
       { count: bookingCount },
       { data: users },
       { data: bookingsData },
+      { data: barbersData },
     ] = await Promise.all([
       supabase.from('profiles').select('*', { count: 'exact', head: true }),
       supabase.from('uploads').select('*', { count: 'exact', head: true }),
@@ -73,6 +68,7 @@ export default function AdminDashboard() {
       supabase.from('bookings').select('*', { count: 'exact', head: true }),
       supabase.from('profiles').select('*').order('created_at', { ascending: false }).limit(10),
       supabase.from('bookings').select('*').order('created_at', { ascending: false }),
+      supabase.from('barbers').select('*'),
     ])
 
     setStats({
@@ -83,6 +79,7 @@ export default function AdminDashboard() {
     })
     setRecentUsers(users || [])
     setBookings(bookingsData || [])
+    setBarbersList(barbersData || [])
   }
 
   const handleRefresh = async () => {
@@ -135,7 +132,7 @@ export default function AdminDashboard() {
   // Barber performance
   const barberPerformance = useMemo(() => {
     return barbersList.map(barber => {
-      const barberBookings = bookings.filter(b => b.barber_id === barber.id)
+      const barberBookings = bookings.filter(b => String(b.barber_id) === String(barber.id))
       const completedCount = barberBookings.filter(b => b.status === 'completed').length
       const todayCount = barberBookings.filter(b => b.booking_date === today).length
       const totalCount = barberBookings.length
@@ -146,7 +143,7 @@ export default function AdminDashboard() {
         todayBookings: todayCount,
       }
     }).sort((a, b) => b.totalBookings - a.totalBookings)
-  }, [bookings, today])
+  }, [bookings, today, barbersList])
 
   // Filtered bookings
   const filteredBookings = useMemo(() => {
@@ -156,15 +153,18 @@ export default function AdminDashboard() {
     }
     if (searchQuery) {
       const q = searchQuery.toLowerCase()
-      filtered = filtered.filter(b => 
-        b.customer_name?.toLowerCase().includes(q) ||
-        b.customer_phone?.toLowerCase().includes(q) ||
-        b.service?.toLowerCase().includes(q) ||
-        getBarberById(b.barber_id)?.name.toLowerCase().includes(q)
-      )
+      filtered = filtered.filter(b => {
+        const barber = getBarberById(b.barber_id)
+        return (
+          b.customer_name?.toLowerCase().includes(q) ||
+          b.customer_phone?.toLowerCase().includes(q) ||
+          b.service?.toLowerCase().includes(q) ||
+          (barber && barber.name.toLowerCase().includes(q))
+        )
+      })
     }
     return filtered
-  }, [bookings, bookingFilter, searchQuery])
+  }, [bookings, bookingFilter, searchQuery, barbersList])
 
   // Recent activity (last 5 bookings)
   const recentBookings = useMemo(() => bookings.slice(0, 5), [bookings])
